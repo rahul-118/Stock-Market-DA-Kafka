@@ -1,0 +1,59 @@
+#below line of command is to download all needed files on to aws ec2 instance
+wget https://downloads.apache.org/kafka/3.4.0/
+
+#below command is used to uncompress the installed file for kafka
+tar -xvf kafka_2.13-3.4.0.tgz
+
+
+-----------------------
+#below command we checked the java version and found java is not installed. 
+java -version
+
+#this below command is to install java 
+sudo yum install java-1.8.0-openjdk
+java -version
+cd kafka_2.12-3.3.1
+
+Start Zoo-keeper:(The resource manager for managing the brokers in kafka cluster)
+-------------------------------
+bin/zookeeper-server-start.sh config/zookeeper.properties
+
+Open another window to start kafka
+on one window the zookeeper will be running and on the second window we will start our kafka server
+But first ssh to to your ec2 machine as done above
+
+
+Start Kafka-server:
+----------------------------------------
+Duplicate the session & enter in a new console --
+
+#we are running kafka in a single ec2 machine as our project needs only one broker hence we need to expand the memory for kafka server for which we use below command. this adds 128Mb memory for kafka 
+export KAFKA_HEAP_OPTS="-Xmx256M -Xms128M"
+cd kafka_2.12-3.3.1
+
+#now to start kafka we use below command
+bin/kafka-server-start.sh config/server.properties
+
+Now there is a problem we cannot use this server the reason for that is we cannot access our private ip in our local machine so we change the ec2 private server to public.
+It is pointing to private server , change server.properties so that it can run in public IP 
+
+To do this , you can follow any of the 2 approaches shared belwo --
+Do a "sudo nano config/server.properties" - change ADVERTISED_LISTENERS to public ip of the EC2 instance
+
+Once this is done we need to go to the security option of our ec2 instance and in security goups add inbound rules and allow our local machine IP 9092 to access the server.
+
+Create the topic:
+-----------------------------
+Duplicate the session & enter in a new console --
+cd kafka_2.12-3.3.1
+bin/kafka-topics.sh --create --topic demo_testing2 --bootstrap-server {Put the Public IP of your EC2 Instance:9092} --replication-factor 1 --partitions 1
+
+Start Producer:
+--------------------------
+bin/kafka-console-producer.sh --topic demo_testing2 --bootstrap-server {Put the Public IP of your EC2 Instance:9092} 
+
+Start Consumer:
+-------------------------
+Duplicate the session & enter in a new console --
+cd kafka_2.12-3.3.1
+bin/kafka-console-consumer.sh --topic demo_testing2 --bootstrap-server {Put the Public IP of your EC2 Instance:9092}
